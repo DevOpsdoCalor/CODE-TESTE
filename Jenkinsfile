@@ -3,7 +3,7 @@ pipeline {
         label "docker-jenkins"
      }
     stages {
-        stage('TESTE UNITARIO') {
+        stage('GIT CLONE') {
             steps {
                 sh 'git clone https://github.com/DevOpsdoCalor/CODE-TESTE.git'
             }
