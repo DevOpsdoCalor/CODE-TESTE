@@ -5,15 +5,14 @@ pipeline {
     stages {
         stage('TESTE UNITARIO') {
             steps {
-               sh 'cd /tmp/includes/'
-               sh 'git clone https://github.com/DevOpsdoCalor/CODE-TESTE.git'
+                sh 'git clone https://github.com/DevOpsdoCalor/CODE-TESTE.git'
             }
         }
     }
     stages {
         stage('TESTE UNITARIO') {
             steps {
-               sh 'sudo docker run --rm -v /home/jackson/workspace/PIPE-TOTVS:/tmp -v /tmp/output/:/bin/output/ totvsengpro/advpl-tlpp-code-analyzer'
+               sh 'sudo docker run --rm -v /home/jackson/workspace/teste:/tmp -v /tmp/output/:/bin/output/ totvsengpro/advpl-tlpp-code-analyzer'
             }
         }
     }
