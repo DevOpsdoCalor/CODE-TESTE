@@ -3,7 +3,7 @@ pipeline {
         label "docker-jenkins"
      }
     stages {  
-        stage('GIT CLONE') {
+        stage('GIT CLONEe') {
             steps {
                 sh 'git pull'
             }
