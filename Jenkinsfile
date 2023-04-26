@@ -5,7 +5,7 @@ pipeline {
     stages {  
         stage('GIT CLONE') {
             steps {
-                sh 'git pull -a'
+                sh 'git pull'
             }
       }     
         stage('TESTE UNITARIO') {
