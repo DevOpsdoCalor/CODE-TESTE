@@ -5,7 +5,7 @@ pipeline {
     stages {  
         stage('GIT CLONE') {
             steps {
-                sh 'git pull'
+                sh 'git pull https://github.com/DevOpsdoCalor/CODE-TESTE.git'
             }
         }     
         stage('TESTE UNITARIO') {
