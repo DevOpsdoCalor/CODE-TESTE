@@ -3,9 +3,9 @@ pipeline {
         label "docker-jenkins"
      }
     stages {
-        stage('Hello') {
+        stage('TESTE UNITARIO') {
             steps {
-                echo 'Hello World'
+                docker run -v /home/jackson/workspace/PIPE-TOTVS:/tmp -v /tmp/output/:/bin/output/ totvsengpro/advpl-tlpp-code-analyzer
             }
         }
     }
