@@ -5,8 +5,8 @@ pipeline {
     stages {
         stage('TESTE UNITARIO') {
             steps {
-               sh 'cd /tmp/includes/ &&
-               git clone https://github.com/DevOpsdoCalor/CODE-TESTE.git'
+               sh 'cd /tmp/includes/'
+               sh 'git clone https://github.com/DevOpsdoCalor/CODE-TESTE.git'
             }
         }
     }
