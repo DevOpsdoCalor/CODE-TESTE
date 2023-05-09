@@ -71,7 +71,7 @@ Static function fOK(cMascara)
 			Else
 				cMemo += "Atualizacao realizada com sucesso! " +  cMascara + "." + Chr(13) + Chr(10)
 				oMemo:Refresh()
-			EndIf
+			
 		EndIf
 	EndIf
 
