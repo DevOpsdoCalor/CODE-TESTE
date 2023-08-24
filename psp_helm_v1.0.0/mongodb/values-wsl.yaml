@@ -1,0 +1,10 @@
+mongodb:
+  database_name: aWdz
+  igs_password: cGFzc3dvcmQK
+  igs_user: aWdzX3VzZXI=
+  mongodb: mongo:5.0
+  namespace: mongodb
+  pv_mount_path: /var/lib/pv-mongodb
+  root_password: cGFzc3dvcmQK
+  root_user: YWRtaW4K
+  user_roles: aWdzX3VzZXI6ZGJBZG1pbixyZWFkV3JpdGU6cGFzc3dvcmQ=

@@ -1,0 +1,18 @@
+[req]
+distinguished_name  = req_distinguished_name
+req_extensions = v3_req
+
+[req_distinguished_name]
+countryName           = US
+countryName_default = US
+stateOrProvinceName   = California
+stateOrProvinceName_default = CA
+localityName	= SanFrancisco
+organizationName          = Paravision
+organizationName_default = Paravision
+commonName            = psp
+commonName_default = psp
+
+[v3_req]
+basicConstraints = CA:true
+keyUsage = critical, keyCertSign

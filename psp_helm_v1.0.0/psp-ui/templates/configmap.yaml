@@ -1,0 +1,14 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: psp-ui
+  namespace: {{ .Values.psp_ui.psp_ui_namespace }}
+data:
+  .env: |-
+    NEXT_PUBLIC_SCORE_INDICATOR_STOP_1={{ .Values.psp_ui.psp_ui_score_indicator_stop_1 }}
+    NEXT_PUBLIC_SCORE_INDICATOR_STOP_2={{ .Values.psp_ui.psp_ui_score_indicator_stop_2 }}
+    NEXT_PUBLIC_MAX_REQUEST_BODY_SIZE={{ .Values.psp_ui.psp_ui_max_request_body_size }}
+    NEXT_PUBLIC_IGS_BASE_URL={{ .Values.psp_ui.psp_ui_igs_base_url }}
+    NEXT_PUBLIC_HISTORY_LIMIT={{ .Values.psp_ui.psp_ui_history_limit }}
+    NEXT_PUBLIC_OFFSET={{ .Values.psp_ui.psp_ui_offset }}
+    NEXT_PUBLIC_RECORDS_LIMIT={{ .Values.psp_ui.psp_ui_records_limit }}

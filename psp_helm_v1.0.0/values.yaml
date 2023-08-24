@@ -1,0 +1,121 @@
+pspNamespace: psp
+imagePullSecrets: regcred
+# Spring boot configurations
+spring:
+  datasource:
+    hikari:
+      maximumPoolSize: 100
+      minimumIdle: 5
+    password: pass  # specify DB password
+    username: pv    # specify DB user
+  kafka:
+    bootstrapServers: kafka-service.kafka.svc.cluster.local:9092
+  profiles:
+    active: h2,k8s
+
+# These parameters are not used by Orchestrator, but used by kubectl/helm to deploy Orchestrator
+orchestrator:
+  dockerImageUrl: containers.paravision.ai/psp-orchestrator/psp-orchestrator:v1.0.0
+  maxHeapSize: 2G
+  minCpu: 1000m
+  minHeapSize: 2G
+  minMemory: 2000Mi
+  nodeSelectorKey: kubernetes.io/os
+  nodeSelectorValue: linux
+
+# Parameters that are controlled and managed by the orchestrator
+app:
+  datasync:
+    kafkaDatasetTopicRetentionSecs: 604800
+    grpcEnrollFetchSize: 3000
+    templateLoaderConcurrency: 100
+  enrollment:
+    checkPendingEnrollmentIntervalSecs: 300
+    enrollmentsBulkInsertRecordCount: 200
+    pendingEnrollmentBulkInsertRecordCount: 200
+    pendingEnrollmentsProcessorBatchSize: 3000
+    pendingEnrollmentsProcessorConcurrency: 5
+    pendingEnrollmentsProcessorFetchSize: 1000
+    serverAssignmentIntervalSecs: 180
+    templatesBulkInsertRecordCount: 200
+  worker:
+    extract:
+      enableHttps: false
+      inferenceWorkers: 4
+    search:
+      enableHttps: false
+      grpcServerThreadCount: 300
+      reIndexIntervalSecs: 30
+      reIndexConcurrency: 1
+    verify:
+      enableHttps: false
+      grpcServerThreadCount: 300
+  kubernetes:
+    dockerImagePullPolicy: IfNotPresent
+    data:
+      dockerImageUrl: containers.paravision.ai/psp-worker/psp-worker:v1.0.0
+      #enabled: false
+      maxCpuCount: 1
+      maxMemory: 1.0
+      minCpuCount: 1
+      minMemory: 1.0
+      nodeSelectorKey: kubernetes.io/os
+      nodeSelectorValue: linux
+      pvc:
+        storage: 2Gi
+        storageclass: manual
+    extract:
+      dockerImageUrl: containers.paravision.ai/processor/processor:v6.4.1-gen5-precision-openvino
+      #enabled: true
+      gpuEnabled: false
+      maxCpuCount: 1
+      maxMemory: 2.0
+      minCpuCount: 1
+      minMemory: 2.0
+      nodeSelectorKey: kubernetes.io/os
+      nodeSelectorValue: linux
+      autoscale:
+        minReplicas: 1
+        maxReplicas: 10
+    search:
+      dockerImageUrl: containers.paravision.ai/psp-worker/psp-worker:v1.0.0
+      maxDatasetSize: 4.0
+      minCpuCount: 1
+      minMemory: 6.0
+      nodeSelectorCpuValue: linux
+      nodeSelectorGpuValue: linux
+      nodeSelectorKey: kubernetes.io/os
+    verify:
+      dockerImageUrl: containers.paravision.ai/psp-worker/psp-worker:v1.0.0
+      #enabled: true
+      maxCpuCount: 1
+      maxMemory: 2.0
+      minCpuCount: 1
+      minMemory: 2.0
+      nodeSelectorKey: kubernetes.io/os
+      nodeSelectorValue: linux
+
+  etl:
+    extractConcurrency: 20
+    downloadImageConcurrency: 50
+    saveTemplatesConcurrency: 50
+    extractFetchSize: 1000
+    extractFaceQualityThreshold: 0.7
+    gs:
+      client:
+        projectId:
+    s3:
+      client:
+        region:
+        accessKey:
+        secretKey:
+
+# Kafka deployment related
+kafka:
+  advertisedHostName: host.docker.internal
+  namespace: kafka
+  nodeSelectorKey: kubernetes.io/os
+  nodeSelectorValue: linux
+
+metrics:
+  logIntervalSecs: 3600

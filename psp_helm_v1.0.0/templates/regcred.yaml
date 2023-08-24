@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  # Update the credentials to pull the images
+  # review: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials
+  # docker login containers.paravision.ai
+  # kubectl create secret generic regcred     --from-file=.dockerconfigjson=$HOME/.docker/config.json     --type=kubernetes.io/dockerconfigjson
+  # kubectl get secret regcred --output="jsonpath={.data.\.dockerconfigjson}"
+  .dockerconfigjson: ewoJImF1dGhzIjogewoJCSJjb250YWluZXJzLnBhcmF2aXNpb24uYWkiOiB7CgkJCSJhdXRoIjogImRYTmxjbTVoYldWZlptOXlYMk52Ym5SaGFXNWxjbk5mY0dGeVlYWnBjMmx2Ymw5aGFUcHdZWE56ZDI5eVpBbz0iCgkJfQoJfQp9 # sample secret
+kind: Secret
+metadata:
+  name: regcred
+  namespace: {{ .Values.pspNamespace }}
+type: kubernetes.io/dockerconfigjson

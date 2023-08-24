@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: igs
+  namespace: {{ .Values.igs.igs_namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: igs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: igs
+    spec:
+      containers:
+        - name: igs
+          env:
+            - name: mongodb_cluster_url
+              value: {{ .Values.igs.igs_database_cluster_url }}
+            - name: mongodb_username
+              valueFrom:
+                secretKeyRef:
+                  name: regcred
+                  key: DATABASE_USERNAME
+            - name: mongodb_password
+              valueFrom:
+                secretKeyRef:
+                  name: regcred
+                  key: DATABASE_PASSWORD
+            - name: psp_base_url
+              value: {{ .Values.igs.igs_psp_base_url }}
+            - name: extract_batch_size
+              value: {{ .Values.igs.igs_extract_batch_size | quote }}
+            - name: records_limit_per_enroll
+              value: {{ .Values.igs.igs_records_limit_per_enroll | quote }}
+          image: {{ .Values.igs.igs_registry_image }}
+          imagePullPolicy: {{ .Values.igs.igs_registry_image_pull_policy }}
+          ports:
+            - name: igs
+              containerPort: 3001
+              protocol: TCP
+      imagePullSecrets:
+        - name: regcred

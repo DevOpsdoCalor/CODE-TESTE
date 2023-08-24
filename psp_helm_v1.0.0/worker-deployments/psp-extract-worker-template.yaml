@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  selector:
+    matchLabels:
+      app: ${app.worker.uniqueId}
+  template:
+    metadata:
+      labels:
+        app: ${app.worker.uniqueId}
+        appGroup: ${app.worker.groupId}
+        appType: ${app.worker.type}
+    spec:
+      serviceAccountName: ${app.kubernetes.serviceAccountName}
+      imagePullSecrets:
+        - name: ${docker.registry.secretName}
+      nodeSelector:
+        "${app.kubernetes.extract.nodeSelectorKey}": "${app.kubernetes.extract.nodeSelectorValue}"
+      terminationGracePeriodSeconds: 30
+      containers:
+        - env:
+            - name: PV_SSL
+              value: "${app.worker.enableHttps}"
+            - name: PV_SSL_CERT
+              value: "/certificate/cert.pem"
+            - name: PV_SSL_KEY
+              value: "/certificate/key.pem"
+            - name: PV_DETECTION_MODEL
+              value: "${app.worker.extract.detectionModel}"
+            - name: PV_INFERENCE_WORKERS
+              value: "${app.worker.extract.inferenceWorkers}"
+            - name: PV_WORKER_INIT_RETRIES
+              value: "${app.worker.extract.workerInitRetries}"
+            - name: PV_SCORING_MODE
+              value: "${app.worker.extract.scoringMode}"
+            - name: PV_USE_NVJPEG
+              value: "${app.worker.extract.useNvjpeg}"
+            - name: PV_CONNECTION_AGE_MS
+              value: "${app.worker.extract.workerConnectionAgeMilli}"
+          name: ${app.worker.uniqueId}
+          image: ${docker.registry.url}
+          imagePullPolicy: ${docker.imagePullPolicy}
+          resources:
+            requests:
+              cpu: ${app.worker.requests.cpu}m
+              memory: ${app.worker.requests.memory}Mi
+            limits:
+              cpu: ${app.worker.limits.cpu}m
+              memory: ${app.worker.limits.memory}Mi
+          volumeMounts:
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/cert.pem
+              subPath: cert.pem
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/key.pem
+              subPath: key.pem
+      volumes:
+        - name: psp-sslcerts-cm-volume
+          configMap:
+            name: psp-sslcerts-cm
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  maxReplicas: ${app.worker.autoscale.maxReplicas}
+  minReplicas: ${app.worker.autoscale.minReplicas}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ${app.worker.uniqueId}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: ${app.worker.autoscale.maxReplicas}
+          periodSeconds: 15
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+      selectPolicy: Min
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+      selectPolicy: Max
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: ${app.worker.autoscale.cpuTargetAverageUtilization}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  clusterIP: None
+  ports:
+    - name: transport-member
+      port: ${app.worker.extract.port}
+      protocol: TCP
+      targetPort: ${app.worker.extract.port}
+  type: ClusterIP
+  selector:
+    app: ${app.worker.uniqueId}

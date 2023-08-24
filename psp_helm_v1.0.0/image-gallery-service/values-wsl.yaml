@@ -1,0 +1,11 @@
+igs:
+  igs_database_cluster_url: mongodb.mongodb.svc.cluster.local:27017
+  igs_database_password: cGFzc3dvcmQ=
+  igs_database_user: aWdzX3VzZXI=
+  igs_namespace: igs
+  igs_psp_base_url: http://psp-orchestrator.psp.svc.cluster.local:8080/psp/v1
+  igs_registry: docker.io
+  igs_registry_image: paravision/image-gallery-service:latest
+  igs_registry_image_pull_policy: Never
+  igs_extract_batch_size: 1
+  igs_records_limit_per_enroll: 1

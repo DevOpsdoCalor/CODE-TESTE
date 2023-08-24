@@ -1,0 +1,69 @@
+imagePullSecrets: regcred
+
+# Spring boot configurations
+spring:
+  datasource:
+    #url: jdbc:mariadb://10.27.33.3:3306/psp-perf?cachePrepStmts=true&useServerPrepStmts=true&rewriteBatchedStatements=true
+    #url: jdbc:sqlserver://10.27.32.3:1433;database=pspperf;sendStringParametersAsUnicode=false;encrypt=false
+    url: jdbc:postgresql://10.27.32.3:5432/pspdb
+    hikari:
+      maximumPoolSize: 500
+      minimumIdle: 60
+  profiles:
+    active: postgresql,k8s
+  kafka:
+    bootstrapServers: kafka-service.kafka.svc.cluster.local:9092
+
+# These parameters are not used by Orchestrator, but used by kubectl/helm to deploy Orchestrator
+orchestrator:
+  nodeSelectorKey: node.type
+  nodeSelectorValue: orchestrator
+  minHeapSize: 8G
+  maxHeapSize: 8G
+  minMemory: 10000Mi
+  minCpu: 5000m
+
+# Parameters that are controlled and managed by the orchestrator
+app:
+  enrollment:
+    pendingEnrollmentsProcessorConcurrency: 5
+    pendingEnrollmentsProcessorFetchSize: 20000
+    pendingEnrollmentsProcessorBatchSize: 100000
+    pendingEnrollmentBulkInsertRecordCount: 200
+    enrollmentsBulkInsertRecordCount: 150
+    templatesBulkInsertRecordCount: 200
+  kubernetes:
+    dockerImagePullPolicy: Always
+    data:
+      enabled: false                     # enable/disable data worker
+      nodeSelectorKey: node.type
+      nodeSelectorValue: data-worker
+      minCpuCount: 1
+      maxCpuCount: 1
+      minMemory: 2.0
+      maxMemory: 2.0
+      pvc:
+        storageclass: "standard"
+        storage: "250.0Gi"
+    verify:
+      enabled: false                     # enable/disable verify worker
+      nodeSelectorKey: node.type
+      nodeSelectorValue: verify-worker
+    extract:
+      enabled: false                     # enable/disable extract worker
+      nodeSelectorKey: node.type
+      nodeSelectorValue: extract-worker
+      minCpuCount: 1
+      maxCpuCount: 1
+      minMemory: 4.0
+      maxMemory: 4.0
+    search:
+      nodeSelectorKey: node.type
+      nodeSelectorCpuValue: search-worker-cpu
+      nodeSelectorGpuValue: search-worker-gpu
+      minMemory: 6.0
+      maxDatasetSize: 5.0
+
+# Kafka deployment related
+kafka:
+  advertisedHostName: kafka-service.kafka.svc.cluster.local

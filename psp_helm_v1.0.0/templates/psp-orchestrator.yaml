@@ -1,0 +1,286 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: psp-user
+  namespace: {{ .Values.pspNamespace }}
+{{ if .Values.imagePullSecrets }}
+imagePullSecrets:
+  - name: {{ .Values.imagePullSecrets }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: psp-user-dev
+  namespace: {{ .Values.pspNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: psp-user
+    namespace: {{ .Values.pspNamespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psp-orchestrator
+  namespace: {{ .Values.pspNamespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: psp-orchestrator
+  template:
+    metadata:
+      namespace: {{ .Values.pspNamespace }}
+      labels:
+        app: psp-orchestrator
+    spec:
+      serviceAccountName: psp-user
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+    {{- end }}
+      nodeSelector:
+        {{ .Values.orchestrator.nodeSelectorKey }}: {{ .Values.orchestrator.nodeSelectorValue }}
+      containers:
+        - command:
+            - java
+            - -Xms{{ .Values.orchestrator.minHeapSize }}
+            - -Xmx{{ .Values.orchestrator.maxHeapSize }}
+            - -Djava.security.egd=file:/dev/./urandom
+            - -jar
+            - app.jar
+          env:
+            - name: spring.profiles.active
+              value: {{ .Values.spring.profiles.active }}
+            - name: spring.datasource.url
+              value: {{ .Values.spring.datasource.url }}
+            - name: spring.datasource.hikari.maximumPoolSize
+              value: {{ .Values.spring.datasource.hikari.maximumPoolSize | quote }}
+            - name: spring.datasource.hikari.minimumIdle
+              value: {{ .Values.spring.datasource.hikari.minimumIdle | quote }}
+            - name: spring.datasource.username
+              value: {{ .Values.spring.datasource.username }}
+            - name: spring.datasource.password
+              value: {{ .Values.spring.datasource.password }}
+            - name: app.worker.search.enableHttps
+              value: {{ .Values.app.worker.search.enableHttps | quote }}
+            - name: app.worker.verify.enableHttps
+              value: {{ .Values.app.worker.verify.enableHttps | quote }}
+            - name: app.worker.extract.enableHttps
+              value: {{ .Values.app.worker.extract.enableHttps | quote }}
+            - name: app.worker.extract.inferenceWorkers
+              value: {{ .Values.app.worker.extract.inferenceWorkers | quote }}
+            - name: app.kubernetes.data.enabled
+              value: {{ .Values.app.kubernetes.data.enabled | quote }}
+            - name: app.kubernetes.extract.enabled
+              value: {{ .Values.app.kubernetes.extract.enabled | quote }}
+            - name: app.kubernetes.verify.enabled
+              value: {{ .Values.app.kubernetes.verify.enabled | quote }}
+            - name: app.kubernetes.extract.gpuEnabled
+              value: {{ .Values.app.kubernetes.extract.gpuEnabled | quote }}
+            - name: spring.kafka.bootstrapServers
+              value: {{ .Values.spring.kafka.bootstrapServers }}
+            - name: app.kubernetes.search.minMemory
+              value: {{ .Values.app.kubernetes.search.minMemory | quote }} 
+            - name: app.kubernetes.data.minMemory
+              value: {{ .Values.app.kubernetes.data.minMemory | quote }}
+            - name: app.kubernetes.data.maxMemory
+              value: {{ .Values.app.kubernetes.data.maxMemory | quote }}
+            - name: app.kubernetes.verify.minMemory
+              value: {{ .Values.app.kubernetes.verify.minMemory | quote }}
+            - name: app.kubernetes.verify.maxMemory
+              value: {{ .Values.app.kubernetes.verify.maxMemory | quote }}
+            - name: app.kubernetes.extract.minMemory
+              value: {{ .Values.app.kubernetes.extract.minMemory | quote }}
+            - name: app.kubernetes.extract.maxMemory
+              value: {{ .Values.app.kubernetes.extract.maxMemory | quote }}
+            - name: app.kubernetes.search.minCpuCount
+              value: {{ .Values.app.kubernetes.search.minCpuCount | quote }}
+            - name: app.kubernetes.data.minCpuCount
+              value: {{ .Values.app.kubernetes.data.minCpuCount | quote }}
+            - name: app.kubernetes.data.maxCpuCount
+              value: {{ .Values.app.kubernetes.data.maxCpuCount | quote }}
+            - name: app.kubernetes.verify.minCpuCount
+              value: {{ .Values.app.kubernetes.verify.minCpuCount | quote }}
+            - name: app.kubernetes.verify.maxCpuCount
+              value: {{ .Values.app.kubernetes.verify.maxCpuCount | quote }}
+            - name: app.kubernetes.extract.minCpuCount
+              value: {{ .Values.app.kubernetes.extract.minCpuCount | quote }}
+            - name: app.kubernetes.extract.maxCpuCount
+              value: {{ .Values.app.kubernetes.extract.maxCpuCount | quote }}
+            - name: app.kubernetes.data.pvc.storageclass
+              value: {{ .Values.app.kubernetes.data.pvc.storageclass }}
+            - name: app.kubernetes.data.pvc.storage
+              value: {{ .Values.app.kubernetes.data.pvc.storage | quote }}
+            - name: spring.kafka.clientId
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: app.kubernetes.namespace
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: app.kubernetes.data.dockerImageUrl
+              value: {{ .Values.app.kubernetes.data.dockerImageUrl }}
+            - name: app.kubernetes.search.dockerImageUrl
+              value: {{ .Values.app.kubernetes.search.dockerImageUrl }}
+            - name: app.kubernetes.extract.dockerImageUrl
+              value: {{ .Values.app.kubernetes.extract.dockerImageUrl }}
+            - name: app.kubernetes.verify.dockerImageUrl
+              value: {{ .Values.app.kubernetes.verify.dockerImageUrl }}
+            - name: app.kubernetes.search.nodeSelectorKey
+              value: {{ .Values.app.kubernetes.search.nodeSelectorKey }}
+            - name: app.kubernetes.search.nodeSelectorCpuValue
+              value: {{ .Values.app.kubernetes.search.nodeSelectorCpuValue }}
+            - name: app.kubernetes.search.nodeSelectorGpuValue
+              value: {{ .Values.app.kubernetes.search.nodeSelectorGpuValue }}
+            - name: app.kubernetes.data.nodeSelectorKey
+              value: {{ .Values.app.kubernetes.data.nodeSelectorKey }}
+            - name: app.kubernetes.data.nodeSelectorValue
+              value: {{ .Values.app.kubernetes.data.nodeSelectorValue }}
+            - name: app.kubernetes.extract.nodeSelectorKey
+              value: {{ .Values.app.kubernetes.extract.nodeSelectorKey }}
+            - name: app.kubernetes.extract.nodeSelectorValue
+              value: {{ .Values.app.kubernetes.extract.nodeSelectorValue }}
+            - name: app.kubernetes.extract.autoscale.minReplicas
+              value: {{ .Values.app.kubernetes.extract.autoscale.minReplicas | quote }}
+            - name: app.kubernetes.extract.autoscale.maxReplicas
+              value: {{ .Values.app.kubernetes.extract.autoscale.maxReplicas | quote }}
+            - name: app.kubernetes.verify.nodeSelectorKey
+              value: {{ .Values.app.kubernetes.verify.nodeSelectorKey }}
+            - name: app.kubernetes.verify.nodeSelectorValue
+              value: {{ .Values.app.kubernetes.verify.nodeSelectorValue }}
+            - name: app.kubernetes.dockerImagePullPolicy
+              value: {{ .Values.app.kubernetes.dockerImagePullPolicy }}
+            - name: app.kubernetes.search.maxDatasetSize
+              value: {{ .Values.app.kubernetes.search.maxDatasetSize | quote }}
+            - name: metrics.logIntervalSecs
+              value: {{ .Values.metrics.logIntervalSecs | quote }}
+            - name: app.datasync.kafkaDatasetTopicRetentionSecs
+              value: {{ .Values.app.datasync.kafkaDatasetTopicRetentionSecs | quote }}
+            - name: app.datasync.grpcEnrollFetchSize
+              value: {{ .Values.app.datasync.grpcEnrollFetchSize | quote }}
+            - name: app.datasync.templateLoaderConcurrency
+              value: {{ .Values.app.datasync.templateLoaderConcurrency | quote }}
+            - name: app.worker.search.grpcServerThreadCount
+              value: {{ .Values.app.worker.search.grpcServerThreadCount | quote }}
+            - name: app.enrollment.serverAssignmentIntervalSecs
+              value: {{ .Values.app.enrollment.serverAssignmentIntervalSecs | quote }}
+            - name: app.enrollment.checkPendingEnrollmentIntervalSecs
+              value: {{ .Values.app.enrollment.checkPendingEnrollmentIntervalSecs | quote }}
+            - name: app.enrollment.pendingEnrollmentsProcessorConcurrency
+              value: {{ .Values.app.enrollment.pendingEnrollmentsProcessorConcurrency | quote }}
+            - name: app.enrollment.pendingEnrollmentsProcessorFetchSize
+              value: {{ .Values.app.enrollment.pendingEnrollmentsProcessorFetchSize | quote }}
+            - name: app.enrollment.pendingEnrollmentsProcessorBatchSize
+              value: {{ .Values.app.enrollment.pendingEnrollmentsProcessorBatchSize | quote }}
+            - name: app.enrollment.pendingEnrollmentBulkInsertRecordCount
+              value: {{ .Values.app.enrollment.pendingEnrollmentBulkInsertRecordCount | quote }}
+            - name: app.enrollment.enrollmentsBulkInsertRecordCount
+              value: {{ .Values.app.enrollment.enrollmentsBulkInsertRecordCount | quote }}
+            - name: app.enrollment.templatesBulkInsertRecordCount
+              value: {{ .Values.app.enrollment.templatesBulkInsertRecordCount | quote }}
+            - name: app.etl.extractFetchSize
+              value: {{ .Values.app.etl.extractFetchSize | quote }}
+            - name: app.etl.extractFaceQualityThreshold
+              value: {{ .Values.app.etl.extractFaceQualityThreshold | quote }}
+            - name: app.etl.extractConcurrency
+              value: {{ .Values.app.etl.extractConcurrency | quote }}
+            - name: app.etl.downloadImageConcurrency
+              value: {{ .Values.app.etl.downloadImageConcurrency | quote }}
+            - name: app.etl.saveTemplatesConcurrency
+              value: {{ .Values.app.etl.saveTemplatesConcurrency | quote }}
+            - name: app.etl.s3.client.region
+              value: {{ .Values.app.etl.s3.client.region }}
+            - name: app.etl.s3.client.accessKey
+              value: {{ .Values.app.etl.s3.client.accessKey }}
+            - name: app.etl.s3.client.secretKey
+              value: {{ .Values.app.etl.s3.client.secretKey }}
+            - name: app.etl.gs.client.projectId
+              value: {{ .Values.app.etl.gs.client.projectId }}
+            - name: app.worker.search.reIndexIntervalSecs
+              value: {{ .Values.app.worker.search.reIndexIntervalSecs | quote }}
+            - name: app.worker.search.reIndexConcurrency
+              value: {{ .Values.app.worker.search.reIndexConcurrency | quote }}
+          name: psp-orchestrator
+          image: {{ .Values.orchestrator.dockerImageUrl }}
+          imagePullPolicy: {{ .Values.app.kubernetes.dockerImagePullPolicy }}
+          resources:
+            requests:
+              cpu: {{ .Values.orchestrator.minCpu }}
+              memory: {{ .Values.orchestrator.minMemory }}
+          volumeMounts:
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/cert.pem
+              subPath: cert.pem
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/key.pem
+              subPath: key.pem
+            - name: psp-gs-cm-volume
+              mountPath: /config/gs/gs_etl_client_credentials.json
+              subPath: gs_etl_client_credentials.json
+            - name: psp-worker-deployments-cm-volume
+              mountPath: /config/kubernetes/psp-data-worker-template.yaml
+              subPath: psp-data-worker-template.yaml
+            - name: psp-worker-deployments-cm-volume
+              mountPath: /config/kubernetes/psp-search-worker-template.yaml
+              subPath: psp-search-worker-template.yaml
+            - name: psp-worker-deployments-cm-volume
+              mountPath: /config/kubernetes/psp-extract-worker-template.yaml
+              subPath: psp-extract-worker-template.yaml
+            - name: psp-worker-deployments-cm-volume
+              mountPath: /config/kubernetes/psp-verify-worker-template.yaml
+              subPath: psp-verify-worker-template.yaml
+      volumes:
+        - name: psp-sslcerts-cm-volume
+          configMap:
+            name: psp-sslcerts-cm
+        - name: psp-gs-cm-volume
+          configMap:
+            name: psp-gs-cm
+        - name: psp-worker-deployments-cm-volume
+          configMap:
+            name: psp-worker-deployments-cm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: psp-orchestrator
+  namespace: {{ .Values.pspNamespace }}
+  labels:
+    app: psp-orchestrator
+spec:
+  ports:
+    - name: http-transport-member
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: grpc-transport-member
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  type: LoadBalancer
+  selector:
+    app: psp-orchestrator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: psp-grpc-orchestrator
+  namespace: {{ .Values.pspNamespace }}
+  labels:
+    app: psp-orchestrator
+spec:
+  clusterIP: None
+  ports:
+    - name: grpc-transport-member
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  type: ClusterIP
+  selector:
+    app: psp-orchestrator

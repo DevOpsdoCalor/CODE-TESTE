@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb
+  namespace: {{ .Values.mongodb.namespace }}
+data:
+  mongo.conf: |
+    storage:
+      dbPath: /data/db
+  ensure-users.js: |
+    const targetDbStr = cat('/etc/data/MONGO_DATABASE_NAME');
+    const rootUser = cat('/etc/data/admin/MONGO_ROOT_USERNAME');
+    const rootPass = cat('/etc/data/admin/MONGO_ROOT_PASSWORD');
+    const usersStr = cat('/etc/data/MONGO_USERS_LIST');
+
+    const adminDb = db.getSiblingDB('admin');
+    adminDb.auth(rootUser, rootPass);
+    print('~~~~~ Successfully authenticated admin user');
+
+    const targetDb = db.getSiblingDB(targetDbStr);
+    targetDb.temp.insert({key: "Temp", value: "temP"});
+    const customRoles = adminDb
+      .getRoles({rolesInfo: 1, showBuiltinRoles: false})
+      .map(role => role.role)
+      .filter(Boolean);
+
+    usersStr
+      .trim()
+      .split(';')
+      .map(s => s.split(':'))
+      .forEach(user => {
+        const username = user[0];
+        const rolesStr = user[1];
+        const password = user[2];
+
+        if (!rolesStr || !password) {
+          return;
+        }
+
+        const roles = rolesStr.split(',');
+        const userDoc = {
+          user: username,
+          pwd: password,
+        };
+
+        userDoc.roles = roles.map(role => {
+          if (!~customRoles.indexOf(role)) {
+            return role;
+          }
+          return {role: role, db: 'admin'}; 
+        });
+
+        try {
+          targetDb.createUser(userDoc);
+          print('~~~~~ Successfully created user');
+        } catch (err) {
+          print('~~~~~ Error creating user');
+          if (!~err.message.toLowerCase().indexOf('duplicate')) {
+            throw err;
+          }
+        }
+      });

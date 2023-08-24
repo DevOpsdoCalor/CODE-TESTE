@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: psp-gs-cm
+  namespace: {{ .Values.pspNamespace }}
+data:
+  {{- (.Files.Glob "gs/**.json").AsConfig | nindent 2 }}

@@ -1,0 +1,179 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  selector:
+    matchLabels:
+      app: ${app.worker.uniqueId}
+  template:
+    metadata:
+      labels:
+        app: ${app.worker.uniqueId}
+        appGroup: ${app.worker.groupId}
+        appType: ${app.worker.type}
+    spec:
+      serviceAccountName: ${app.kubernetes.serviceAccountName}
+      imagePullSecrets:
+        - name: ${docker.registry.secretName}
+      nodeSelector:
+        "${app.kubernetes.verify.nodeSelectorKey}": "${app.kubernetes.verify.nodeSelectorValue}"
+      terminationGracePeriodSeconds: 30
+      containers:
+        - env:
+            - name: PSP_WORKER_ENABLE_HTTPS
+              value: "${app.worker.enableHttps}"
+            - name: PSP_WORKER_CERT_FILE
+              value: "/certificate/cert.pem"
+            - name: PSP_WORKER_KEY_FILE
+              value: "/certificate/key.pem"
+            - name: PSP_WORKER_MODE
+              value: "verify"
+            - name: PSP_DATA_POD_ADDRESS
+              value: ""
+            - name: PSP_ORCHESTRATOR_GRPC_HOST
+              value: "dummy"
+            - name: PSP_ORCHESTRATOR_GRPC_PORT
+              value: "${grpc.server.port}"
+            - name: PSP_WORKER_GRPC_CLIENT_TIMEOUT_SECONDS
+              value: "${grpc.worker.clientTimeoutSecs}"
+            - name: PSP_WORKER_GRPC_CLIENT_MAX_RECV_MSG_SIZE_MB
+              value: "${grpc.worker.clientMaxInboundMessageSizeMB}"
+            - name: PSP_WORKER_GRPC_SERVER_THREAD_COUNT
+              value: "${app.worker.verify.grpcServerThreadCount}"
+            - name: PSP_KAFKA_DATASET_CONTROL_TOPIC
+              value: ""
+            - name: PSP_KAFKA_TOPIC_PREFIX
+              value: ""
+            - name: PSP_KAFKA_HOSTNAME
+              value: ""
+            - name: PSP_KAFKA_ENCRYPTION
+              value: ""
+            - name: PSP_KAFKA_USERNAME
+              value: ""
+            - name: PSP_KAFKA_PASSWORD
+              value: ""
+            - name: PSP_WORKER_SERVICE_ID
+              value: "${app.worker.uniqueId}"
+            - name: PSP_WORKER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          name: ${app.worker.uniqueId}
+          image: ${docker.registry.url}
+          imagePullPolicy: ${docker.imagePullPolicy}
+          resources:
+            requests:
+              cpu: ${app.worker.requests.cpu}m
+              memory: ${app.worker.requests.memory}Mi
+            limits:
+              cpu: ${app.worker.limits.cpu}m
+              memory: ${app.worker.limits.memory}Mi
+          volumeMounts:
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/cert.pem
+              subPath: cert.pem
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/key.pem
+              subPath: key.pem
+          startupProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - ps -ef | grep worker | grep -v grep
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - ps -ef | grep worker | grep -v grep
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - ps -ef | grep worker | grep -v grep
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: psp-sslcerts-cm-volume
+          configMap:
+            name: psp-sslcerts-cm
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  maxReplicas: ${app.worker.autoscale.maxReplicas}
+  minReplicas: ${app.worker.autoscale.minReplicas}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ${app.worker.uniqueId}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: ${app.worker.autoscale.maxReplicas}
+          periodSeconds: 15
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+      selectPolicy: Min
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+      selectPolicy: Max
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: ${app.worker.autoscale.cpuTargetAverageUtilization}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  clusterIP: None
+  ports:
+    - name: transport-member
+      port: ${app.worker.verify.port}
+      protocol: TCP
+      targetPort: ${app.worker.verify.port}
+  type: ClusterIP
+  selector:
+    app: ${app.worker.uniqueId}

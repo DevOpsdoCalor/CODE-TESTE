@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: psp-sslcerts-cm
+  namespace: {{ .Values.pspNamespace }}
+data:
+  {{- (.Files.Glob "sslconfig/**.pem").AsConfig | nindent 2 }}

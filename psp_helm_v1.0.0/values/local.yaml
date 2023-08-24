@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    # url: jdbc:postgresql://host.docker.internal:5432/psp # for WSL
+    url: jdbc:postgresql://10.0.1.1:5432/psp  # for microk8s
+  profiles:
+    active: postgresql,k8s
+
+orchestrator:
+  maxHeapSize: 4G
+  minCpu: 2000m
+  minHeapSize: 4G
+  minMemory: 5000Mi
+
+app:
+  datasync:
+    kafkaDatasetTopicRetentionSecs: 3000
+  kubernetes:
+    dockerImagePullPolicy: IfNotPresent
+    data:
+      enabled: false                     # enable/disable data worker
+    extract:
+      enabled: false                     # enable/disable extract worker
+      maxCpuCount: 2
+      maxMemory: 4.0
+      minCpuCount: 2
+      minMemory: 4.0
+    search:
+      enabled: true                      # enable/disable search worker
+      maxDatasetSize: 2.0
+      minMemory: 4.0
+    verify:
+      enabled: false                     # enable/disable verify worker
+  worker:
+    extract:
+      enableHttps: false
+    search:
+      enableHttps: false
+    verify:
+      enableHttps: false
+kafka:
+  advertisedHostName: host.docker.internal

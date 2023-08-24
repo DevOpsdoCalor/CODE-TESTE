@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: igs
+  namespace: {{ .Values.igs.igs_namespace }}
+  labels:
+    app: igs
+  annotations:
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "100"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 3001
+  selector:
+    app: igs

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: psp-worker-deployments-cm
+  namespace: {{ .Values.pspNamespace }}
+data:
+  {{- (.Files.Glob "worker-deployments/**.yaml").AsConfig | nindent 2 }}

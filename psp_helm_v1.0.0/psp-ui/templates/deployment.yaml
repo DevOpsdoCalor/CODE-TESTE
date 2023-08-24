@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psp-ui
+  namespace: {{ .Values.psp_ui.psp_ui_namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: psp-ui
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: psp-ui
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: psp-ui
+        image: {{ .Values.psp_ui.psp_ui_registry_image }}
+        imagePullPolicy: {{ .Values.psp_ui.psp_ui_registry_image_pull_policy }}
+        ports:
+        - name: psp-ui
+          containerPort: 4001
+          protocol: TCP
+        volumeMounts:
+          - mountPath: /app/.env
+            name: configmap
+            readOnly: true
+            subPath: .env
+      volumes:
+        - name: configmap
+          configMap:
+            name: psp-ui
+            items:
+              - key: .env
+                path: .env 
+       

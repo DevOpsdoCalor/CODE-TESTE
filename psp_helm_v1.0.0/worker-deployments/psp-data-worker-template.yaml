@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  replicas: ${app.worker.replicaCount}
+  selector:
+    matchLabels:
+      app: ${app.worker.uniqueId}
+  template:
+    metadata:
+      labels:
+        app: ${app.worker.uniqueId}
+        appGroup: ${app.worker.groupId}
+        appType: ${app.worker.type}
+    spec:
+      serviceAccountName: ${app.kubernetes.serviceAccountName}
+      imagePullSecrets:
+        - name: ${docker.registry.secretName}
+      nodeSelector:
+        "${app.kubernetes.data.nodeSelectorKey}": "${app.kubernetes.data.nodeSelectorValue}"
+      terminationGracePeriodSeconds: 30
+      containers:
+        - env:
+            - name: PSP_WORKER_ENABLE_HTTPS
+              value: "${app.worker.enableHttps}"
+            - name: PSP_WORKER_CERT_FILE
+              value: "/certificate/cert.pem"
+            - name: PSP_WORKER_KEY_FILE
+              value: "/certificate/key.pem"
+            - name: PSP_WORKER_MODE
+              value: "data"
+            - name: PSP_DATA_POD_ADDRESS
+              value: "${app.kubernetes.data.address}"
+            - name: PSP_ORCHESTRATOR_GRPC_HOST
+              value: "${grpc.server.host}"
+            - name: PSP_ORCHESTRATOR_GRPC_PORT
+              value: "${grpc.server.port}"
+            - name: PSP_WORKER_GRPC_CLIENT_TIMEOUT_SECONDS
+              value: "${grpc.worker.clientTimeoutSecs}"
+            - name: PSP_WORKER_GRPC_CLIENT_MAX_RECV_MSG_SIZE_MB
+              value: "${grpc.worker.clientMaxInboundMessageSizeMB}"
+            - name: PSP_KAFKA_DATASET_CONTROL_TOPIC
+              value: "${app.datasync.datasetControlTopic}"
+            - name: PSP_KAFKA_TOPIC_PREFIX
+              value: "${app.datasync.topicPrefix}"
+            - name: PSP_KAFKA_HOSTNAME
+              value: "${spring.kafka.bootstrap-servers}"
+            - name: PSP_KAFKA_ENCRYPTION
+              value: "${spring.kafka.encryption}"
+            - name: PSP_KAFKA_USERNAME
+              value: "${spring.kafka.username}"
+            - name: PSP_KAFKA_PASSWORD
+              value: "${spring.kafka.password}"
+            - name: PSP_WORKER_SERVICE_ID
+              value: "${app.worker.uniqueId}"
+            - name: PSP_WORKER_REINDEX_INTERVAL_SECONDS
+              value: "${app.worker.search.reIndexIntervalSecs}"
+            - name: PSP_WORKER_REINDEX_CONCURRENCY
+              value: "${app.worker.search.reIndexConcurrency}"
+            - name: PSP_WORKER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          name: ${app.worker.uniqueId}
+          image: ${docker.registry.url}
+          imagePullPolicy: ${docker.imagePullPolicy}
+          resources:
+            requests:
+              cpu: ${app.worker.requests.cpu}m
+              memory: ${app.worker.requests.memory}Mi
+            limits:
+              cpu: ${app.worker.limits.cpu}m
+              memory: ${app.worker.limits.memory}Mi
+          volumeMounts:
+            - mountPath: /opt/worker/datasets
+              name: data-worker-pvc
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/cert.pem
+              subPath: cert.pem
+            - name: psp-sslcerts-cm-volume
+              mountPath: /certificate/key.pem
+              subPath: key.pem
+      volumes:
+        - name: psp-sslcerts-cm-volume
+          configMap:
+            name: psp-sslcerts-cm
+  volumeClaimTemplates:
+    - metadata:
+        name: data-worker-pvc
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: ${app.kubernetes.data.pvc.storageclass}
+        resources:
+          requests:
+            storage: ${app.kubernetes.data.pvc.storage}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${app.worker.uniqueId}
+  labels:
+    app: ${app.worker.uniqueId}
+    appGroup: ${app.worker.groupId}
+    appType: ${app.worker.type}
+spec:
+  ports:
+    - name: http-transport-member
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: grpc-transport-member
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  type: ClusterIP
+  selector:
+    app: ${app.worker.uniqueId}

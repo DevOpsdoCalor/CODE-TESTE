@@ -1,0 +1,12 @@
+psp_ui:
+  psp_ui_history_limit: 25
+  psp_ui_igs_base_url: igs.igs.svc.cluster.local:3001/igs/v1
+  psp_ui_max_request_body_size: 10mb
+  psp_ui_namespace: psp-ui
+  psp_ui_offset: 0
+  psp_ui_records_limit: 100
+  psp_ui_registry: docker.io 
+  psp_ui_registry_image: paravision/psp-ui:latest
+  psp_ui_registry_image_pull_policy: Never
+  psp_ui_score_indicator_stop_1: 70
+  psp_ui_score_indicator_stop_2: 30

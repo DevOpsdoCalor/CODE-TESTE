@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: {{ .Values.mongodb.namespace }}
+  labels:
+    app: mongodb
+    app.kubernetes.io/name: mongodb
+spec:
+  ports:
+    - name: transport-member
+      port: 27017
+      protocol: TCP
+      targetPort: 27017
+  type: LoadBalancer
+  selector:
+    app: mongodb
